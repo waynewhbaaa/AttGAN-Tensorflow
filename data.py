@@ -3,20 +3,24 @@ import pylib as py
 import tensorflow as tf
 import tflib as tl
 
+# CelebA
+# ATT_ID = {'5_o_Clock_Shadow': 0, 'Arched_Eyebrows': 1, 'Attractive': 2,
+#           'Bags_Under_Eyes': 3, 'Bald': 4, 'Bangs': 5, 'Big_Lips': 6,
+#           'Big_Nose': 7, 'Black_Hair': 8, 'Blond_Hair': 9, 'Blurry': 10,
+#           'Brown_Hair': 11, 'Bushy_Eyebrows': 12, 'Chubby': 13,
+#           'Double_Chin': 14, 'Eyeglasses': 15, 'Goatee': 16,
+#           'Gray_Hair': 17, 'Heavy_Makeup': 18, 'High_Cheekbones': 19,
+#           'Male': 20, 'Mouth_Slightly_Open': 21, 'Mustache': 22,
+#           'Narrow_Eyes': 23, 'No_Beard': 24, 'Oval_Face': 25,
+#           'Pale_Skin': 26, 'Pointy_Nose': 27, 'Receding_Hairline': 28,
+#           'Rosy_Cheeks': 29, 'Sideburns': 30, 'Smiling': 31,
+#           'Straight_Hair': 32, 'Wavy_Hair': 33, 'Wearing_Earrings': 34,
+#           'Wearing_Hat': 35, 'Wearing_Lipstick': 36,
+#           'Wearing_Necklace': 37, 'Wearing_Necktie': 38, 'Young': 39}
 
-ATT_ID = {'5_o_Clock_Shadow': 0, 'Arched_Eyebrows': 1, 'Attractive': 2,
-          'Bags_Under_Eyes': 3, 'Bald': 4, 'Bangs': 5, 'Big_Lips': 6,
-          'Big_Nose': 7, 'Black_Hair': 8, 'Blond_Hair': 9, 'Blurry': 10,
-          'Brown_Hair': 11, 'Bushy_Eyebrows': 12, 'Chubby': 13,
-          'Double_Chin': 14, 'Eyeglasses': 15, 'Goatee': 16,
-          'Gray_Hair': 17, 'Heavy_Makeup': 18, 'High_Cheekbones': 19,
-          'Male': 20, 'Mouth_Slightly_Open': 21, 'Mustache': 22,
-          'Narrow_Eyes': 23, 'No_Beard': 24, 'Oval_Face': 25,
-          'Pale_Skin': 26, 'Pointy_Nose': 27, 'Receding_Hairline': 28,
-          'Rosy_Cheeks': 29, 'Sideburns': 30, 'Smiling': 31,
-          'Straight_Hair': 32, 'Wavy_Hair': 33, 'Wearing_Earrings': 34,
-          'Wearing_Hat': 35, 'Wearing_Lipstick': 36,
-          'Wearing_Necklace': 37, 'Wearing_Necktie': 38, 'Young': 39}
+ATT_ID = {'Kid': 0, 'Adult': 1, 'Middle-age': 2, "Elder": 3, 'Gender': 4, "White": 5,
+        "Latino_Hispanic": 6, "East Asian": 7, "Southeast Asian": 8, "Indian": 9,  "Black": 10, "Middle Eastern": 11}
+
 ID_ATT = {v: k for k, v in ATT_ID.items()}
 
 
@@ -32,7 +36,7 @@ def make_celeba_dataset(img_dir,
                         repeat=1):
     img_names = np.genfromtxt(label_path, dtype=str, usecols=0)
     img_paths = np.array([py.join(img_dir, img_name) for img_name in img_names])
-    labels = np.genfromtxt(label_path, dtype=int, usecols=range(1, 41))
+    labels = np.genfromtxt(label_path, dtype=int, usecols=range(1, 13))
     labels = labels[:, np.array([ATT_ID[att_name] for att_name in att_names])]
 
     if shuffle:
@@ -75,6 +79,36 @@ def make_celeba_dataset(img_dir,
     return dataset, len_dataset
 
 
+# def check_attribute_conflict(att_batch, att_name, att_names):
+#     def _set(att, value, att_name):
+#         if att_name in att_names:
+#             att[att_names.index(att_name)] = value
+#
+#     idx = att_names.index(att_name)
+#
+#     for att in att_batch:
+#         if att_name in ['Bald', 'Receding_Hairline'] and att[idx] == 1:
+#             _set(att, 0, 'Bangs')
+#         elif att_name == 'Bangs' and att[idx] == 1:
+#             _set(att, 0, 'Bald')
+#             _set(att, 0, 'Receding_Hairline')
+#         elif att_name in ['Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Gray_Hair'] and att[idx] == 1:
+#             for n in ['Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Gray_Hair']:
+#                 if n != att_name:
+#                     _set(att, 0, n)
+#         elif att_name in ['Straight_Hair', 'Wavy_Hair'] and att[idx] == 1:
+#             for n in ['Straight_Hair', 'Wavy_Hair']:
+#                 if n != att_name:
+#                     _set(att, 0, n)
+#         # elif att_name in ['Mustache', 'No_Beard'] and att[idx] == 1:  # enable this part help to learn `Mustache`
+#         #     for n in ['Mustache', 'No_Beard']:
+#         #         if n != att_name:
+#         #             _set(att, 0, n)
+#
+#     return att_batch
+
+# Check for Fairface
+
 def check_attribute_conflict(att_batch, att_name, att_names):
     def _set(att, value, att_name):
         if att_name in att_names:
@@ -82,18 +116,17 @@ def check_attribute_conflict(att_batch, att_name, att_names):
 
     idx = att_names.index(att_name)
 
+
     for att in att_batch:
-        if att_name in ['Bald', 'Receding_Hairline'] and att[idx] == 1:
-            _set(att, 0, 'Bangs')
-        elif att_name == 'Bangs' and att[idx] == 1:
-            _set(att, 0, 'Bald')
-            _set(att, 0, 'Receding_Hairline')
-        elif att_name in ['Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Gray_Hair'] and att[idx] == 1:
-            for n in ['Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Gray_Hair']:
+        # check age
+        if att_name in ['Kid', 'Adult', 'Middle-age', "Elder"] and att[idx] == 1:
+            print("Unique name1: " + att_name)
+            for n in ['Kid', 'Adult', 'Middle-age', "Elder"]:
                 if n != att_name:
                     _set(att, 0, n)
-        elif att_name in ['Straight_Hair', 'Wavy_Hair'] and att[idx] == 1:
-            for n in ['Straight_Hair', 'Wavy_Hair']:
+        elif att_name in ["White", "Latino_Hispanic", "East Asian", "Southeast Asian", "Indian",  "Black", "Middle Eastern"] and att[idx] == 1:
+            print("Unique name2: " + att_name)
+            for n in ["White", "Latino_Hispanic", "East Asian", "Southeast Asian", "Indian",  "Black", "Middle Eastern"]:
                 if n != att_name:
                     _set(att, 0, n)
         # elif att_name in ['Mustache', 'No_Beard'] and att[idx] == 1:  # enable this part help to learn `Mustache`
